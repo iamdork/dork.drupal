@@ -1,0 +1,4 @@
+dependencies:
+- dork.shell
+- dork.php
+- dork.mariadb

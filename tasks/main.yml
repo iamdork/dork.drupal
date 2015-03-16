@@ -1,0 +1,71 @@
+- name: install drush
+  shell: composer require drush/drush
+  args:
+    chdir: /usr/local/composer
+    creates: /usr/local/composer/vendor/drush/drush
+  register: drush
+
+- name: run drush as root to download dependencies
+  sudo: yes
+  sudo_user: root
+  shell: /usr/local/composer/vendor/bin/drush status
+  when: drush.changed
+
+- name: create local drush directory
+  file:
+    path: /home/{{ dork_user }}/.drush
+    owner: "{{ dork_user }}"
+    group: "{{ dork_user }}"
+    mode: 0755
+    state: directory
+
+- name: copy drushrc.php
+  copy:
+    src: drushrc.php
+    dest: /home/{{ dork_user }}/.drush/drushrc.php
+
+- name: override nginx vhost
+  copy:
+    src: dork.conf
+    dest: /etc/nginx/conf.d/dork.conf
+
+- name: get stat of /var/web
+  stat:
+    path: /var/web
+  register: dir
+
+- name: remove /var/web if its still a link
+  file:
+    path: /var/web
+    state: absent
+  when: dir.stat.islnk is defined and dir.stat.islnk
+
+- name: create docroot
+  file:
+    path: /var/web
+    owner: "{{ dork_user }}"
+    state: directory
+
+- name: install drupal
+  stat:
+    path: /var/web/sites/default/settings.php
+  register: install
+  changed_when: not install.stat.exists
+  notify: install drupal
+
+- debug: msg="trigger drupal update"
+  notify: update drupal
+  tags: update
+  changed_when: true
+
+- debug: msg="trigger features revert"
+  notify: revert features
+  tags: features
+  changed_when: true
+
+- debug: msg="trigger sync build"
+  notify: sync build
+  tags:
+  - core-make
+  - profile-make
+  changed_when: true
