@@ -46,6 +46,12 @@
     owner: "{{ dork_user }}"
     state: directory
 
+- name: copy mariadb configuration
+  copy:
+    src: drupal-mariadb.cnf
+    dest: /etc/my.cnf.d/drupal-mariadb.cnf
+  register: my_cnf
+
 - meta: flush_handlers
 
 - name: install drupal
