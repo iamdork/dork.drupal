@@ -46,6 +46,8 @@
     owner: "{{ dork_user }}"
     state: directory
 
+- meta: flush_handlers
+
 - name: install drupal
   stat:
     path: /var/web/sites/default/settings.php

@@ -25,3 +25,5 @@
     --exclude=sites/default
     --include=sites/default/default.settings.php
     /var/web/ /var/build/
+  sudo: yes
+  sudo_user: root
