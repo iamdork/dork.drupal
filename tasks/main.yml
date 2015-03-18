@@ -52,8 +52,6 @@
     dest: /etc/my.cnf.d/drupal-mariadb.cnf
   register: my_cnf
 
-- meta: flush_handlers
-
 - name: install drupal
   stat:
     path: /var/web/sites/default/settings.php
@@ -69,11 +67,4 @@
 - debug: msg="trigger features revert"
   notify: revert features
   tags: features
-  changed_when: true
-
-- debug: msg="trigger sync build"
-  notify: sync build
-  tags:
-  - core-make
-  - profile-make
   changed_when: true
