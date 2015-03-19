@@ -4,10 +4,8 @@ dependencies:
 - dork.mariadb
 dork:
   tags:
-  - "*.install": ['update']
-  - "*.features.inc": ['features']
-  - "*.pages_default.inc": ['features']
-  - "*.panels_default.inc": ['features']
-  - "*.strongarm.inc": ['features']
-  - "*.views_default.inc": ['features']
+  - "**.install": ['update']
+  - "**.inc": ['features', 'cache']
+  - "**.php": ['cache']
+  - "**.module": ['cache']
     
