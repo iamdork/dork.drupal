@@ -18,6 +18,10 @@
   shell: /usr/local/composer/vendor/bin/drush fra -y
   sudo_user: "{{ dork_user }}"
 
+- name: cache clear
+  shell: /usr/local/composer/vendor/bin/drush cc all
+  sudo_user: "{{ dork_user }}"
+
 - name: sync build
   sudo_user: "{{ dork_user }}"
   shell: >
