@@ -52,6 +52,8 @@
     dest: /etc/my.cnf.d/drupal-mariadb.cnf
   register: my_cnf
 
+- meta: flush_handlers
+
 - name: install drupal
   stat:
     path: /var/web/sites/default/settings.php
