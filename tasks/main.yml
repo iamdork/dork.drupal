@@ -70,3 +70,8 @@
   notify: revert features
   tags: features
   changed_when: true
+
+- debug: msg="trigger cache clear"
+  notify: cache clear
+  tags: cache
+  changed_when: true

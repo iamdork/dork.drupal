@@ -2,3 +2,12 @@ dependencies:
 - dork.shell
 - dork.php
 - dork.mariadb
+dork:
+  tags:
+  - "*.install": ['update']
+  - "*.features.inc": ['features']
+  - "*.pages_default.inc": ['features']
+  - "*.panels_default.inc": ['features']
+  - "*.strongarm.inc": ['features']
+  - "*.views_default.inc": ['features']
+    
