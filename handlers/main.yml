@@ -1,10 +1,14 @@
 - name: install drupal
   shell: /usr/local/composer/vendor/bin/drush si --account-name={{ dork_user }} --account-pass={{ dork_user }} --db-url=mysql://root@localhost/drupal {{ profile }} -y
   sudo_user: "{{ dork_user }}"
+  args:
+    chdir: /var/web/sites/default
 
 - name: update drupal
   shell: /usr/local/composer/vendor/bin/drush updb -y
   sudo_user: "{{ dork_user }}"
+  args:
+    chdir: /var/web/sites/default
 
 - name: revert features
   shell: /usr/local/composer/vendor/bin/drush pm-list --pipe --type=module --status=enabled --no-core | grep features | wc -l
@@ -13,17 +17,25 @@
   changed_when: features.stdout_lines[0] == "1"
   notify: really revert features
   tags: features
+  args:
+    chdir: /var/web/sites/default
 
 - name: really revert features
   shell: /usr/local/composer/vendor/bin/drush fra -y
   sudo_user: "{{ dork_user }}"
+  args:
+    chdir: /var/web/sites/default
 
 - name: cache clear
   shell: /usr/local/composer/vendor/bin/drush cc all
   sudo_user: "{{ dork_user }}"
+  args:
+    chdir: /var/web/sites/default
 
 - name: sync build
   sudo_user: "{{ dork_user }}"
+  args:
+    chdir: /var/web/sites/default
   shell: >
     rsync -ru --delete
     --exclude=sites/default
