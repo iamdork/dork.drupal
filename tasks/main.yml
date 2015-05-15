@@ -1,3 +1,13 @@
+- name: packages
+  yum:
+    name: "{{ item }}"
+    state: present
+  with_items:
+  - tar
+  - unzip
+  - rsync
+  - openssh-clients
+
 - name: install drush
   shell: composer require drush/drush
   args:
@@ -5,24 +15,27 @@
     creates: /usr/local/composer/vendor/drush/drush
   register: drush
 
-- name: run drush as root to download dependencies
-  sudo: yes
-  sudo_user: root
-  shell: /usr/local/composer/vendor/bin/drush status
-  when: drush.changed
+- name: link drush
+  file:
+    src: /usr/local/composer/vendor/bin/drush
+    dest: /usr/bin/drush
+    mode: 0755
+    state: link
 
 - name: create local drush directory
   file:
-    path: /home/{{ dork_user }}/.drush
-    owner: "{{ dork_user }}"
-    group: "{{ dork_user }}"
+    path: /root/.drush
     mode: 0755
     state: directory
 
 - name: copy drushrc.php
   copy:
     src: drushrc.php
-    dest: /home/{{ dork_user }}/.drush/drushrc.php
+    dest: /root/.drush/drushrc.php
+
+- name: run drush as root to download dependencies
+  shell: drush status
+  when: drush.changed
 
 - name: override nginx vhost
   copy:
@@ -43,35 +56,105 @@
 - name: create docroot
   file:
     path: /var/web
-    owner: "{{ dork_user }}"
     state: directory
 
 - name: copy mariadb configuration
   copy:
     src: drupal-mariadb.cnf
     dest: /etc/my.cnf.d/drupal-mariadb.cnf
-  register: my_cnf
+  register: mariadb_conf
 
-- meta: flush_handlers
+- name: restart mariadb
+  supervisorctl:
+    name: mariadb
+    state: restarted
+  when: mariadb_conf.changed
 
-- name: install drupal
+- include: profile.yml
+  tags:
+  - drupal_profile
+
+- include: root.yml
+  tags:
+  - drupal_root
+
+- name: remove existing installation
+  file:
+    path: "{{ item }}"
+    state: absent
+  with_items:
+  - /var/web/sites/default/settings.php
+  - /var/web/sites/default/files
+  when: drupal_fresh_install
+
+- name: search existing installation
   stat:
     path: /var/web/sites/default/settings.php
   register: install
-  changed_when: not install.stat.exists
-  notify: install drupal
 
-- debug: msg="trigger drupal update"
-  notify: update drupal
+- set_fact:
+    drupal_fresh_install: not install.stat.exists
+
+- name: make sites directory writable
+  file:
+    path: /var/web/sites/default
+    mode: 0755
+    state: directory
+  when: drupal_fresh_install
+
+- name: install drupal
+  shell: >
+    drush si
+    --account-name={{ drupal_user }}
+    --account-pass={{ drupal_pass }}
+    --db-url=mysql://root@localhost/drupal {{ drupal_profile }} -y
+  args:
+    chdir: /var/web/sites/default
+  when: drupal_fresh_install
+
+- name: update drupal
+  shell: drush updb -y
   tags: update
-  changed_when: true
+  when: not drupal_fresh_install
+  args:
+    chdir: /var/web/sites/default
 
-- debug: msg="trigger features revert"
-  notify: revert features
-  tags: features
-  changed_when: true
+- set_fact:
+    drupal_uses_features: yes
+  tags:
+  - drupal_features
 
-- debug: msg="trigger cache clear"
-  notify: cache clear
+- set_fact:
+    drupal_uses_features: yes
+  tags:
+  - drupal_features_make
+
+- name: enable features
+  shell: drush pm-enable features -y
+  args:
+    chdir: /var/web/sites/default
+  when: drupal_uses_features
+
+- name: revert features
+  shell: drush fra -y
+  when: drupal_uses_features
+  tags:
+  - features
+  args:
+    chdir: /var/web/sites/default
+
+- name: cache clear
+  shell: drush cc all
   tags: cache
-  changed_when: true
+  args:
+    chdir: /var/web/sites/default
+
+- name: sync build
+  args:
+    chdir: /var/web/sites/default
+  shell: >
+    rsync -ru --delete
+    --exclude=sites/default
+    --include=sites/default/default.settings.php
+    /var/web/ /var/build/
+  tags: codesync

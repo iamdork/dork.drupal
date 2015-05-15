@@ -1,0 +1,35 @@
+- name: add standard exclude paths
+  lineinfile:
+    create: yes
+    dest: /tmp/rsync-excludes
+    line: "{{ item }}"
+    state: present
+  with_items:
+  - .git
+  - sites/default/files
+  - sites/default/settings.php
+  tags: codesync
+
+- name: add configured exclude paths
+  lineinfile:
+    create: yes
+    dest: /tmp/rsync-excludes
+    line: "{{ item }}"
+    state: present
+  with_items: drupal_hot_directories
+  tags: codesync
+
+- name: sync static code
+  shell: >
+    rsync -ru --delete
+    --exclude-from=/tmp/rsync-excludes
+    /var/source{{ drupal_docroot }}/ /var/web/
+  tags: codesync
+
+- name: link hot code directories
+  file:
+    src: /var/source{{ drupal_docroot }}/{{ item }}
+    dest: /var/web/{{ item }}
+    state: link
+  with_items: drupal_hot_directories
+  tags: codesync
