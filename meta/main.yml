@@ -3,7 +3,7 @@ dependencies:
 - dork.mariadb
 - dork.shell
 dork:
-  tags:
+  update_triggers:
   - "**.install": ['update']
   - "**.inc": ['features', 'cache']
   - "**.php": ['cache']
@@ -11,7 +11,8 @@ dork:
   - "drupal-org.make": ["profile-make", "features", "update"]
   - "drupal-org-core.make": ["core-make", "features", "update"]
   - "**": ["codesync"]
-  matches:
+
+  build_triggers:
     drupal_features:
     - "**/features/features.module"
 
