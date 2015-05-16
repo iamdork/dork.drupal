@@ -9,4 +9,5 @@ read_rnd_buffer_size = 64M
 myisam_sort_buffer_size = 64M
 thread_cache_size = 8
 query_cache_size = 32M
+innodb_file_per_table = On
 
