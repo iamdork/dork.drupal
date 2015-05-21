@@ -1,0 +1,11 @@
+- file:
+    path: /etc/rsyslog.d
+    state: directory
+
+- name: copy rsyslog configuration
+  copy:
+    src: drupal-syslog.conf
+    dest: /etc/rsyslog.d/drupal.conf
+
+- name: enable syslog module
+  shell: drupal en syslog -y

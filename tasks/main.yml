@@ -158,3 +158,6 @@
     --include=sites/default/default.settings.php
     /var/web/ /var/build/
   tags: codesync
+
+- include: syslog.yml
+  when: drupal_syslog
