@@ -8,4 +8,4 @@
     dest: /etc/rsyslog.d/drupal.conf
 
 - name: enable syslog module
-  shell: drupal en syslog -y
+  shell: drush en syslog -y
