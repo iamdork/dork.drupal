@@ -9,7 +9,7 @@
   - openssh-clients
 
 - name: install drush
-  shell: composer require drush/drush
+  shell: composer require drush/drush:{{ drupal_drush_version }}
   args:
     chdir: /usr/local/composer
     creates: /usr/local/composer/vendor/drush/drush

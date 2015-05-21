@@ -1,1 +1,1 @@
-drupal_user: dorkdrupal_pass: dorkdrupal_fresh_install: Nodrupal_profile: standarddrupal_uses_features: Nodrupal_skip_profile_make: Falsedrupal_syslog: Falsedrupal_hot_directories:- sites/alldrupal_docroot: ''
+drupal_user: dorkdrupal_pass: dorkdrupal_fresh_install: Nodrupal_profile: standarddrupal_uses_features: Nodrupal_skip_profile_make: Falsedrupal_syslog: Falsedrupal_hot_directories:- sites/alldrupal_drush_version: 6.6.0drupal_docroot: ''
