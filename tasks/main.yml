@@ -131,17 +131,19 @@
 
 - name: enable features
   shell: drush pm-enable features -y
-  args:
-    chdir: /var/web/sites/default
-  when: drupal_uses_features
-
-- name: revert features
-  shell: drush fra -y
-  when: drupal_uses_features
   tags:
   - features
   args:
     chdir: /var/web/sites/default
+  when: drupal_uses_features and not drupal_fresh_install
+
+- name: revert features
+  shell: drush fra -y
+  tags:
+  - features
+  args:
+    chdir: /var/web/sites/default
+  when: drupal_uses_features and not drupal_fresh_install
 
 - name: cache clear
   shell: drush cc all

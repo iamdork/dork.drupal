@@ -30,6 +30,7 @@
 
 - set_fact:
     drupal_profile: "{{ profilename_out.stdout_lines[0] }}"
+  when: drupal_profile != 'standard'
 
 - name: link profile directory
   file:
