@@ -135,7 +135,6 @@
   - features
   args:
     chdir: /var/web/sites/default
-  when: drupal_uses_features and not drupal_fresh_install
 
 - name: revert features
   shell: drush fra -y
@@ -143,7 +142,6 @@
   - features
   args:
     chdir: /var/web/sites/default
-  when: drupal_uses_features and not drupal_fresh_install
 
 - name: cache clear
   shell: drush cc all
