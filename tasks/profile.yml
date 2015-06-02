@@ -19,7 +19,6 @@
   args:
     chdir: /var/web
   tags: profile-make
-  when: not drupal_skip_profile_make
 
 - name: get profile name
   shell: echo ${$(echo *.profile)%.*}
@@ -30,7 +29,7 @@
 
 - set_fact:
     drupal_profile: "{{ profilename_out.stdout_lines[0] }}"
-  when: drupal_profile != 'standard'
+  when: drupal_profile == 'standard'
 
 - name: link profile directory
   file:
