@@ -12,13 +12,13 @@
   shell: drush make /var/source/drupal-org-core.make -y
   args:
     chdir: /var/web
-  tags: core-make
+  tags: drupal_core_make
 
 - name: build profile dependencies
   shell: drush make --no-core /var/source/drupal-org.make -y
   args:
     chdir: /var/web
-  tags: profile-make
+  tags: drupal_profile_make
 
 - name: get profile name
   shell: echo ${$(echo *.profile)%.*}
