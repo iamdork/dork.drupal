@@ -5,20 +5,14 @@ dependencies:
 
 dork:
   update_triggers:
-  - "**.install": ['update']
-  - "**.inc": ['features', 'cache']
-  - "**.php": ['cache']
-  - "**.module": ['cache']
-  - "drupal-org.make": ["profile-make", "features", "update"]
-  - "drupal-org-core.make": ["core-make", "features", "update"]
-  - "**": ["codesync"]
+  - "**.install": ['drupal_update']
+  - "**.inc": ['drupal_features', 'drupal_cache']
+  - "**.php": ['drupal_cache']
+  - "**.module": ['drupal_cache']
+  - "drupal-org.make": ['drupal_features', 'drupal_profile_make', 'drupal_update']
+  - "drupal-org-core.make": ['drupal_core_make', 'drupal_update']
 
   build_triggers:
-    drupal_features:
-    - "**/features/features.module"
-
-    drupal_features_make:
-    - "*.make": "features"
 
     drupal_root:
     - "index.php"

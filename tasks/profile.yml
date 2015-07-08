@@ -22,6 +22,7 @@
 
 - name: get profile name
   shell: echo ${$(echo *.profile)%.*}
+  tags: always
   args:
     chdir: /var/source
     executable: /bin/zsh
@@ -29,10 +30,24 @@
 
 - set_fact:
     drupal_profile: "{{ profilename_out.stdout_lines[0] }}"
+  tags: always
   when: drupal_profile == 'standard'
 
-- name: link profile directory
+- name: remove the profile directory
   file:
-    src: /var/source
-    dest: /var/web/profiles/{{ drupal_profile }}
-    state: link
+    path: /var/web/profiles/{{ drupal_profile }}
+    state: absent
+  tags: always
+
+- name: recreate the profile directory
+  file:
+    path: /var/web/profiles/{{ drupal_profile }}
+    state: directory
+  tags: always
+
+- name: sync the profile directory
+  shell: >
+    rsync -ru --delete
+    --exclude=.git
+    /var/source/ /var/web/profiles/{{ drupal_profile }}/
+  tags: always

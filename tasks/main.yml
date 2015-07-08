@@ -71,12 +71,10 @@
   when: mariadb_conf.changed
 
 - include: profile.yml
-  tags:
-  - drupal_profile
+  tags: drupal_profile
 
 - include: root.yml
-  tags:
-  - drupal_root
+  tags: drupal_root
 
 - name: remove existing installation
   file:
@@ -102,50 +100,37 @@
     state: directory
   when: drupal_fresh_install
 
+- set_fact:
+    drupal_install_profile: drupal_profile
+  when: not drupal_install_profile
+
 - name: install drupal
   shell: >
     drush si
     --account-name={{ drupal_user }}
     --account-pass={{ drupal_pass }}
-    --db-url=mysql://root@localhost/drupal {{ drupal_profile }} -y
+    --db-url=mysql://root@localhost/drupal {{ drupal_install_profile }} -y
   args:
     chdir: /var/web/sites/default
   when: drupal_fresh_install
 
 - name: update drupal
   shell: drush updb -y
-  tags: update
+  tags: drupal_update
   when: not drupal_fresh_install
-  args:
-    chdir: /var/web/sites/default
-
-- set_fact:
-    drupal_uses_features: yes
-  tags:
-  - drupal_features
-
-- set_fact:
-    drupal_uses_features: yes
-  tags:
-  - drupal_features_make
-
-- name: enable features
-  shell: drush pm-enable features -y
-  tags:
-  - features
   args:
     chdir: /var/web/sites/default
 
 - name: revert features
   shell: drush fra -y
-  tags:
-  - features
+  ignore_errors: yes
+  tags: drupal_features
   args:
     chdir: /var/web/sites/default
 
 - name: cache clear
   shell: drush cc all
-  tags: cache
+  tags: drupal_cache
   args:
     chdir: /var/web/sites/default
 
@@ -157,7 +142,7 @@
     --exclude=sites/default
     --include=sites/default/default.settings.php
     /var/web/ /var/build/
-  tags: codesync
+  tags: always
 
 - include: syslog.yml
   when: drupal_syslog
