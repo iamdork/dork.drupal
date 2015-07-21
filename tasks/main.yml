@@ -101,7 +101,7 @@
   when: drupal_fresh_install
 
 - set_fact:
-    drupal_install_profile: drupal_profile
+  drupal_install_profile: "{{ drupal_profile }}"
   when: not drupal_install_profile
 
 - name: install drupal
