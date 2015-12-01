@@ -14,7 +14,7 @@ dork:
   - "drupal-org-core.make": ['drupal_core_make', 'drupal_update']
   - "composer.json": ['drupal_composer_install']
   - "composer.lock": ['drupal_composer_install']
-  - "config/*.yml": ['drupal_config_import']
+  - "config/*.yml": ['drupal_config_import', 'drupal_cache']
 
   build_triggers:
 
