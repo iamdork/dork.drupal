@@ -1,0 +1,50 @@
+- name: packages
+  yum:
+    name: "{{ item }}"
+    state: present
+  with_items:
+  - tar
+  - unzip
+  - rsync
+  - openssh-clients
+
+- name: install drush
+  shell: composer require drush/drush:{{ drupal_drush_version }}
+  args:
+    chdir: /usr/local/composer
+    creates: /usr/local/composer/vendor/drush/drush
+  register: drush
+
+- name: install console_table
+  shell: composer require pear/console_table
+  args:
+    chdir: /usr/local/composer
+    creates: /usr/local/composer/vendor/pear/console_table
+  register: drush
+
+- name: link library
+  file:
+    src: /usr/local/composer/vendor/pear/console_table
+    dest: /usr/local/composer/vendor/drush/drush/lib/Console_Table-1.1.3
+    state: link
+
+# - name: install drupal-console
+#   shell: composer require drupal/console:{{ drupal_console_version }}
+#   args:
+#     chdir: /usr/local/composer
+#     creates: /usr/local/composer/vendor/drupal/console
+#   register: drush
+
+- name: link drush
+  file:
+    src: /usr/local/composer/vendor/bin/drush
+    dest: /usr/bin/drush
+    mode: 0755
+    state: link
+
+# - name: link console
+#   file:
+#     src: /usr/local/composer/vendor/bin/console
+#     dest: /usr/bin/console
+#     mode: 0755
+#     state: link

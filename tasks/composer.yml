@@ -1,0 +1,10 @@
+- set_fact:
+    drupal_docroot: /web
+
+- composer:
+    command: install
+    working_dir: /var/source
+  tags:
+  - drupal_composer_install
+
+- include: root.yml

@@ -4,5 +4,5 @@
     --exclude=.git
     --exclude=sites/default/files
     --exclude=sites/default/settings.php
-    /var/source{{ drupal_docroot }}/ /var/web/
+    /var/source/ /var/web/
   tags: always

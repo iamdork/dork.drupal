@@ -1,10 +1,10 @@
-- name: get stat of /var/web/sites/default
+- name: get stat of /var/web{{ drupal_docroot }}/sites/default
   stat:
-    path: /var/web/sites/default
+    path: /var/web{{ drupal_docroot }}/sites/default
   register: dir
 
 - name: make sites/default writable
-  shell: chmod -R 755 /var/web/sites/default
+  shell: chmod -R 755 /var/web{{ drupal_docroot }}/sites/default
   tags: core-make
   when: dir.stat.isdir is defined and dir.stat.isdir
 

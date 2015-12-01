@@ -2,6 +2,7 @@ dependencies:
 - dork.php
 - dork.mariadb
 - dork.shell
+- dork.cron
 
 dork:
   update_triggers:
@@ -11,6 +12,9 @@ dork:
   - "**.module": ['drupal_cache']
   - "drupal-org.make": ['drupal_features', 'drupal_profile_make', 'drupal_update']
   - "drupal-org-core.make": ['drupal_core_make', 'drupal_update']
+  - "composer.json": ['drupal_composer_install']
+  - "composer.lock": ['drupal_composer_install']
+  - "config/*.yml": ['drupal_config_import']
 
   build_triggers:
 
@@ -27,4 +31,8 @@ dork:
     drupal_profile:
     - "*.profile"
 
-    
+    drupal_composer:
+    - "composer.json": '"web\/core": \["type:drupal-core"\]'
+
+    drupal_config_install:
+    - "config/core.extension.yml"

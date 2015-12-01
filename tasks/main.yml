@@ -1,74 +1,24 @@
-- name: packages
-  yum:
-    name: "{{ item }}"
-    state: present
-  with_items:
-  - tar
-  - unzip
-  - rsync
-  - openssh-clients
-
-- name: install drush
-  shell: composer require drush/drush:{{ drupal_drush_version }}
-  args:
-    chdir: /usr/local/composer
-    creates: /usr/local/composer/vendor/drush/drush
-  register: drush
-
-- name: link drush
-  file:
-    src: /usr/local/composer/vendor/bin/drush
-    dest: /usr/bin/drush
-    mode: 0755
-    state: link
-
-- name: create local drush directory
-  file:
-    path: /root/.drush
-    mode: 0755
-    state: directory
-
-- name: copy drushrc.php
-  copy:
-    src: drushrc.php
-    dest: /root/.drush/drushrc.php
-
-- name: run drush as root to download dependencies
-  shell: drush status
-  when: drush.changed
-
-- name: override nginx vhost
-  copy:
-    src: dork.conf
-    dest: /etc/nginx/conf.d/dork.conf
-
 - name: get stat of /var/web
   stat:
     path: /var/web
   register: dir
 
-- name: remove /var/web if its still a link
+- name: remove /var/web if its still a link (default in dork.nginx)
   file:
     path: /var/web
     state: absent
   when: dir.stat.islnk is defined and dir.stat.islnk
 
-- name: create docroot
+- name: create docroot as real directory
   file:
     path: /var/web
     state: directory
 
-- name: copy mariadb configuration
-  copy:
-    src: drupal-mariadb.cnf
-    dest: /etc/my.cnf.d/drupal-mariadb.cnf
-  register: mariadb_conf
+- include: cli.yml
+  tags: drupal_cli
 
-- name: restart mariadb
-  supervisorctl:
-    name: mariadb
-    state: restarted
-  when: mariadb_conf.changed
+- include: mariadb.yml
+  tags: drupal_mariadb
 
 - include: profile.yml
   tags: drupal_profile
@@ -76,67 +26,104 @@
 - include: root.yml
   tags: drupal_root
 
+- include: composer.yml
+  tags: drupal_composer
+
+- name: create local drush directory
+  file:
+    path: /root/.drush
+    mode: 0755
+    state: directory
+  tags: drupal_cli
+
+- name: generate drushrc.php
+  template:
+    src: drushrc.php.j2
+    dest: /root/.drush/drushrc.php
+  tags: drupal_cli
+
+- name: run drush as root to download dependencies
+  shell: drush status
+  when: drush.changed
+  tags: drupal_cli
+
+- name: override nginx vhost
+  template:
+    src: dork.conf.j2
+    dest: /etc/nginx/conf.d/dork.conf
+
 - name: remove existing installation
   file:
     path: "{{ item }}"
     state: absent
   with_items:
-  - /var/web/sites/default/settings.php
-  - /var/web/sites/default/files
-  when: drupal_fresh_install
-
-- name: search existing installation
-  stat:
-    path: /var/web/sites/default/settings.php
-  register: install
-
-- set_fact:
-    drupal_fresh_install: not install.stat.exists
+  - /var/web{{ drupal_docroot }}/sites/default/settings.php
+  - /var/web{{ drupal_docroot }}/sites/default/files
+  tags: drupal_install
 
 - name: make sites directory writable
   file:
     path: /var/web/sites/default
     mode: 0755
     state: directory
-  when: drupal_fresh_install
+  tags: drupal_install
+
+- name: Set config_installer as installation profile.
+  set_fact:
+    drupal_install_profile: 'config_installer'
+  tags: drupal_config_install
 
 - set_fact:
     drupal_install_profile: "{{ drupal_profile }}"
   when: not drupal_install_profile
+  tags: drupal_install
+
+- set_fact:
+    drupal_install_parameters:
+      config_installer_sync_configure_form.sync_directory: '../config'
+  tags: drupal_config_install
+
+- set_fact:
+    drupal_install_params: ''
+  tags: drupal_install
+
+- set_fact:
+    drupal_install_params: >
+      {{ drupal_install_params }} {{ item.key }}="{{ item.value }}"
+  with_dict: "{{ drupal_install_parameters }}"
+  tags: drupal_install
 
 - name: install drupal
   shell: >
     drush si
     --account-name={{ drupal_user }}
     --account-pass={{ drupal_pass }}
-    --db-url=mysql://root@localhost/drupal {{ drupal_install_profile }} -y
+    --db-url=mysql://root@localhost/drupal
+    {{ drupal_install_profile }} -y
+    {{ drupal_install_params }}
   args:
-    chdir: /var/web/sites/default
-  when: drupal_fresh_install
+    chdir: /var/web{{ drupal_docroot }}/sites/default
+  tags: drupal_install
 
 - name: update drupal
   shell: drush updb -y
   tags: drupal_update
-  when: not drupal_fresh_install
-  args:
-    chdir: /var/web/sites/default
 
 - name: revert features
   shell: drush fra -y
   ignore_errors: yes
   tags: drupal_features
-  args:
-    chdir: /var/web/sites/default
+
+- name: import configuration
+  shell: drush cim -y
+  ignore_errors: yes
+  tags: drupal_config_import
 
 - name: cache clear
-  shell: drush cc all
+  shell: drush {{ drupal_cache_command }}
   tags: drupal_cache
-  args:
-    chdir: /var/web/sites/default
 
 - name: sync build
-  args:
-    chdir: /var/web/sites/default
   shell: >
     rsync -ru --delete
     --exclude=sites/default
