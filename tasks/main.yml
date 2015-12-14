@@ -115,7 +115,7 @@
   tags: drupal_features
 
 - name: import configuration
-  shell: drush cim -y
+  shell: drush cim --partial -y
   ignore_errors: yes
   tags: drupal_config_import
 
