@@ -29,6 +29,11 @@
 - include: composer.yml
   tags: drupal_composer
 
+- name: run drush as root to download dependencies
+  shell: drush status
+  when: drush.changed
+  tags: drupal_cli
+
 - name: create local drush directory
   file:
     path: /root/.drush
@@ -42,85 +47,32 @@
     dest: /root/.drush/drushrc.php
   tags: drupal_cli
 
-- name: run drush as root to download dependencies
-  shell: drush status
-  when: drush.changed
-  tags: drupal_cli
-
 - name: override nginx vhost
   template:
     src: dork.conf.j2
     dest: /etc/nginx/conf.d/dork.conf
 
-- name: remove existing installation
-  file:
-    path: "{{ item }}"
-    state: absent
-  with_items:
-  - /var/web{{ drupal_docroot }}/sites/default/settings.php
-  - /var/web{{ drupal_docroot }}/sites/default/files
-  tags: drupal_install
-
-- name: make sites directory writable
-  file:
-    path: /var/web/sites/default
-    mode: 0755
-    state: directory
-  tags: drupal_install
-
-- name: Set config_installer as installation profile.
-  set_fact:
-    drupal_install_profile: 'config_installer'
-  tags: drupal_config_install
-
-- set_fact:
-    drupal_install_profile: "{{ drupal_profile }}"
-  when: not drupal_install_profile
-  tags: drupal_install
-
-- set_fact:
-    drupal_install_parameters:
-      config_installer_sync_configure_form.sync_directory: '../config'
-  tags: drupal_config_install
-
-- set_fact:
-    drupal_install_params: ''
-  tags: drupal_install
-
-- set_fact:
-    drupal_install_params: >
-      {{ drupal_install_params }} {{ item.key }}="{{ item.value }}"
-  with_dict: "{{ drupal_install_parameters }}"
-  tags: drupal_install
-
-- name: install drupal
-  shell: >
-    drush si
-    --account-name={{ drupal_user }}
-    --account-pass={{ drupal_pass }}
-    --db-url=mysql://root@localhost/drupal
-    {{ drupal_install_profile }} -y
-    {{ drupal_install_params }}
-  args:
-    chdir: /var/web{{ drupal_docroot }}/sites/default
+- include: install.yml
   tags: drupal_install
 
 - name: update drupal
   shell: drush updb -y
+  ignore_errors: drupal_omg_its_broken
   tags: drupal_update
 
 - name: revert features
   shell: drush fra -y
-  ignore_errors: yes
+  ignore_errors: drupal_omg_its_broken
   tags: drupal_features
 
 - name: import configuration
   shell: drush cim --partial -y
-  ignore_errors: yes
+  ignore_errors: drupal_omg_its_broken
   tags: drupal_config_import
 
 - name: cache clear
   shell: drush {{ drupal_cache_command }}
+  ignore_errors: drupal_omg_its_broken
   tags: drupal_cache
 
 - name: sync build

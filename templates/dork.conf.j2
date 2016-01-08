@@ -1,6 +1,6 @@
 server {
   server_name _;
-  root /var/web{{ drupal_docroot }};
+  root /var/web{{ drupal_docroot }}/;
   error_log /var/log/nginx/container.log;
 
   # Enable compression, this will help if you have for instance advagg module

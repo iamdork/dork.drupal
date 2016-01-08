@@ -1,0 +1,165 @@
+# ======================================================================
+# Search for import resources
+# TODO: create custom command
+# defines three boolean variables:
+# - drupal_import_database
+# - drupal_import_public
+# - drupal_import private
+# ======================================================================
+- name: search for database export
+  stat:
+    path: /var/data/drupal.sql
+  register: __stat_db
+  when: drupal_import_database is not defined
+
+- set_fact:
+    drupal_import_database: __stat_db.stat.exists is defined and __stat_db.stat.exists
+  when: drupal_import_database is not defined
+
+- set_fact:
+    drupal_import_database: No
+  when: drupal_import_database is not defined
+
+- name: search for public files export
+  stat:
+    path: /var/data/public
+  register: __stat_public
+  when: drupal_import_public is not defined
+
+- set_fact:
+    drupal_import_public: __stat_public.stat.isdir is defined and __stat_public.stat.isdir
+  when: drupal_import_public is not defined
+
+- set_fact:
+    drupal_import_public: No
+  when: drupal_import_public is not defined
+
+- name: search for private files export
+  stat:
+    path: /var/data/private
+  register: __stat_private
+  when: drupal_import_private is not defined
+
+- set_fact:
+    drupal_import_public: __stat_private.stat.isdir is defined and __stat_private.stat.isdir
+  when: drupal_import_private is not defined
+
+- set_fact:
+    drupal_import_private: No
+  when: drupal_import_private is not defined
+
+
+# ======================================================================
+# Clear existing installation
+# ======================================================================
+- name: remove existing installation
+  file:
+    path: "{{ item }}"
+    state: absent
+  with_items:
+  - /var/web{{ drupal_docroot }}/sites/default/settings.php
+  - /var/web{{ drupal_docroot }}/sites/default/files
+
+- name: remove existing database
+  shell: mysqladmin drop drupal -f
+  ignore_errors: true
+
+- name: make sites directory writable
+  file:
+    path: /var/web{{ drupal_docroot }}/sites/default
+    mode: 0755
+    state: directory
+
+# ======================================================================
+# Install via drush
+# ======================================================================
+- name: Set config_installer as installation profile.
+  set_fact:
+    drupal_install_profile: 'config_installer'
+  tags: drupal_config_install
+
+- set_fact:
+    drupal_install_profile: "{{ drupal_profile }}"
+  when: not drupal_install_profile
+
+- set_fact:
+    drupal_install_parameters:
+      config_installer_sync_configure_form.sync_directory: '../config'
+  tags: drupal_config_install
+
+- set_fact:
+    drupal_install_params: ''
+
+- set_fact:
+    drupal_install_params: >
+      {{ drupal_install_params }} {{ item.key }}="{{ item.value }}"
+  with_dict: "{{ drupal_install_parameters }}"
+
+- name: install drupal
+  shell: >
+    drush si
+    --account-name={{ drupal_user }}
+    --account-pass={{ drupal_pass }}
+    --db-url=mysql://root@localhost/drupal
+    {{ drupal_install_profile }} -y
+    {{ drupal_install_params }}
+  args:
+    chdir: /var/web{{ drupal_docroot }}/sites/default
+  when: not drupal_import_database
+
+# ======================================================================
+# Install via dump
+# ======================================================================
+- name: create settings php
+  shell: cp /var/web{{ drupal_docroot }}/sites/default/default.settings.php /var/web{{ drupal_docroot }}/sites/default/settings.php
+  when: drupal_import_database
+
+- name: copy database.settings.php
+  copy:
+    src: database.settings.php
+    dest: /root/database.settings.php
+  when: drupal_import_database
+
+- name: include the database.settings.php
+  lineinfile:
+    dest: /var/web{{ drupal_docroot }}/sites/default/settings.php
+    line: require '/root/database.settings.php';
+  when: drupal_import_database
+
+- name: create database
+  shell: mysqladmin create drupal
+  when: drupal_import_database
+
+- name: install registry rebuild
+  shell: drush @none dl registry_rebuild -y
+  tags: drupal_cli
+
+- name: import database file
+  shell: mysql drupal < /var/data/drupal.sql
+  when: drupal_import_database
+
+- name: registry rebuild
+  shell: drush rr
+  when: drupal_import_database
+  ignore_errors: drupal_omg_its_broken
+
+# ======================================================================
+# Sync file directories
+# ======================================================================
+- file:
+    state: directory
+    path: "{{ item }}"
+  with_items:
+  - "/var/web{{ drupal_docroot }}/sites/default/files"
+  - "{{ drupal_private_files }}"
+  - "{{ drupal_temporary_files }}"
+
+
+- name: sync public files
+  shell: rsync -ru --delete /var/data/public/ /var/web{{ drupal_docroot }}/sites/default/files/
+  when: drupal_import_public
+
+- name: sync private files
+  shell: rsync -ru --delete /var/data/private/ {{ drupal_private_files }}
+  when: drupal_import_private
+

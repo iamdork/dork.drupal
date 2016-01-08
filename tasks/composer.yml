@@ -4,6 +4,7 @@
 - composer:
     command: install
     working_dir: /var/source
+    no_dev: no
   tags:
   - drupal_composer_install
 
