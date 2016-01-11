@@ -8,7 +8,7 @@
 # ======================================================================
 - name: search for database export
   stat:
-    path: /var/data/drupal.sql
+    path: "{{ drupal_database_dump }}"
   register: __stat_db
   when: drupal_import_database is not defined
 
@@ -105,6 +105,7 @@
     {{ drupal_install_params }}
   args:
     chdir: /var/web{{ drupal_docroot }}/sites/default
+  ignore_errors: __installing is defined and drupal_ignore_install_errors
   when: not drupal_import_database
 
 # ======================================================================
@@ -130,18 +131,9 @@
   shell: mysqladmin create drupal
   when: drupal_import_database
 
-- name: install registry rebuild
-  shell: drush @none dl registry_rebuild -y
-  tags: drupal_cli
-
 - name: import database file
-  shell: mysql drupal < /var/data/drupal.sql
+  shell: mysql drupal < {{ drupal_database_dump }}
   when: drupal_import_database
-
-- name: registry rebuild
-  shell: drush rr
-  when: drupal_import_database
-  ignore_errors: drupal_omg_its_broken
 
 # ======================================================================
 # Sync file directories

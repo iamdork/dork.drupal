@@ -28,13 +28,6 @@
     dest: /usr/local/composer/vendor/drush/drush/lib/Console_Table-1.1.3
     state: link
 
-# - name: install drupal-console
-#   shell: composer require drupal/console:{{ drupal_console_version }}
-#   args:
-#     chdir: /usr/local/composer
-#     creates: /usr/local/composer/vendor/drupal/console
-#   register: drush
-
 - name: link drush
   file:
     src: /usr/local/composer/vendor/bin/drush
@@ -42,9 +35,22 @@
     mode: 0755
     state: link
 
-# - name: link console
-#   file:
-#     src: /usr/local/composer/vendor/bin/console
-#     dest: /usr/bin/console
-#     mode: 0755
-#     state: link
+# ======================================================================
+# Prepare ~/.drush/drushrc.php
+- name: run drush as root to download dependencies
+  shell: drush status
+  when: drush.changed
+  tags: drupal_cli
+
+- name: create local drush directory
+  file:
+    path: /root/.drush
+    mode: 0755
+    state: directory
+  tags: drupal_cli
+
+- name: generate drushrc.php
+  template:
+    src: drushrc.php.j2
+    dest: /root/.drush/drushrc.php
+  tags: drupal_cli

@@ -1,3 +1,11 @@
+# ======================================================================
+# Set error handling. Errors may be ignored during initial install.
+- set_fact:
+    __installing: True
+  tags: drupal_install
+
+# ======================================================================
+# Prepare directory
 - name: get stat of /var/web
   stat:
     path: /var/web
@@ -14,65 +22,63 @@
     path: /var/web
     state: directory
 
-- include: cli.yml
-  tags: drupal_cli
-
+# ======================================================================
+# Configure mariadb
 - include: mariadb.yml
   tags: drupal_mariadb
 
-- include: profile.yml
-  tags: drupal_profile
-
-- include: root.yml
-  tags: drupal_root
-
-- include: composer.yml
-  tags: drupal_composer
-
-- name: run drush as root to download dependencies
-  shell: drush status
-  when: drush.changed
-  tags: drupal_cli
-
-- name: create local drush directory
-  file:
-    path: /root/.drush
-    mode: 0755
-    state: directory
-  tags: drupal_cli
-
-- name: generate drushrc.php
-  template:
-    src: drushrc.php.j2
-    dest: /root/.drush/drushrc.php
-  tags: drupal_cli
-
+# ======================================================================
+# Configure nginx
 - name: override nginx vhost
   template:
     src: dork.conf.j2
     dest: /etc/nginx/conf.d/dork.conf
 
+# ======================================================================
+# Install CLI tools
+- include: cli.yml
+  tags: drupal_cli
+
+# ======================================================================
+# Build document root from profile directory.
+- include: profile.yml
+  tags: drupal_profile
+
+# ======================================================================
+# Build document root from full drupal source tree.
+- include: root.yml
+  tags: drupal_root
+
+# ======================================================================
+# Build document root from composer template.
+- include: composer.yml
+  tags: drupal_composer
+
+# ======================================================================
+# Run installations.
 - include: install.yml
   tags: drupal_install
 
+# ======================================================================
+# Site cleanup tasks.
 - name: update drupal
   shell: drush updb -y
-  ignore_errors: drupal_omg_its_broken
+  ignore_errors: __installing is defined and drupal_ignore_install_errors
   tags: drupal_update
 
 - name: revert features
   shell: drush fra -y
-  ignore_errors: drupal_omg_its_broken
+  ignore_errors: __installing is defined and drupal_ignore_install_errors
   tags: drupal_features
 
 - name: import configuration
   shell: drush cim --partial -y
-  ignore_errors: drupal_omg_its_broken
+  ignore_errors: __installing is defined and drupal_ignore_install_errors
   tags: drupal_config_import
 
 - name: cache clear
   shell: drush {{ drupal_cache_command }}
-  ignore_errors: drupal_omg_its_broken
+  ignore_errors: __installing is defined and drupal_ignore_install_errors
   tags: drupal_cache
 
 - name: sync build
