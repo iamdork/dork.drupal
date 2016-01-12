@@ -1,55 +1,4 @@
 # ======================================================================
-# Search for import resources
-# TODO: create custom command
-# defines three boolean variables:
-# - drupal_import_database
-# - drupal_import_public
-# - drupal_import private
-# ======================================================================
-- name: search for database export
-  stat:
-    path: "{{ drupal_database_dump }}"
-  register: __stat_db
-  when: drupal_import_database is not defined
-
-- set_fact:
-    drupal_import_database: __stat_db.stat.exists is defined and __stat_db.stat.exists
-  when: drupal_import_database is not defined
-
-- set_fact:
-    drupal_import_database: No
-  when: drupal_import_database is not defined
-
-- name: search for public files export
-  stat:
-    path: /var/data/public
-  register: __stat_public
-  when: drupal_import_public is not defined
-
-- set_fact:
-    drupal_import_public: __stat_public.stat.isdir is defined and __stat_public.stat.isdir
-  when: drupal_import_public is not defined
-
-- set_fact:
-    drupal_import_public: No
-  when: drupal_import_public is not defined
-
-- name: search for private files export
-  stat:
-    path: /var/data/private
-  register: __stat_private
-  when: drupal_import_private is not defined
-
-- set_fact:
-    drupal_import_public: __stat_private.stat.isdir is defined and __stat_private.stat.isdir
-  when: drupal_import_private is not defined
-
-- set_fact:
-    drupal_import_private: No
-  when: drupal_import_private is not defined
-
-
-# ======================================================================
 # Clear existing installation
 # ======================================================================
 - name: remove existing installation
@@ -62,7 +11,9 @@
 
 - name: remove existing database
   shell: mysqladmin drop drupal -f
-  ignore_errors: true
+  register: r
+  failed_when: r.rc != 0 and "database doesn't exist" not in r.stderr
+  tags: drupal_import_database
 
 - name: make sites directory writable
   file:
@@ -70,6 +21,13 @@
     mode: 0755
     state: directory
 
+- set_fact:
+    __drush_install: yes
+
+- name: skip drush install if database is imported
+  set_fact:
+    __drush_install: no
+  tags: drupal_database_import
 # ======================================================================
 # Install via drush
 # ======================================================================
@@ -105,35 +63,36 @@
     {{ drupal_install_params }}
   args:
     chdir: /var/web{{ drupal_docroot }}/sites/default
-  ignore_errors: __installing is defined and drupal_ignore_install_errors
-  when: not drupal_import_database
+  register: r
+  when: __drush_install
+  failed_when: __install_ignore is undefined and r.rc != 0
 
 # ======================================================================
 # Install via dump
 # ======================================================================
 - name: create settings php
   shell: cp /var/web{{ drupal_docroot }}/sites/default/default.settings.php /var/web{{ drupal_docroot }}/sites/default/settings.php
-  when: drupal_import_database
+  tags: drupal_import_database
 
 - name: copy database.settings.php
   copy:
     src: database.settings.php
     dest: /root/database.settings.php
-  when: drupal_import_database
+  tags: drupal_import_database
 
 - name: include the database.settings.php
   lineinfile:
     dest: /var/web{{ drupal_docroot }}/sites/default/settings.php
     line: require '/root/database.settings.php';
-  when: drupal_import_database
+  tags: drupal_import_database
 
 - name: create database
   shell: mysqladmin create drupal
-  when: drupal_import_database
+  tags: drupal_import_database
 
 - name: import database file
   shell: mysql drupal < {{ drupal_database_dump }}
-  when: drupal_import_database
+  tags: drupal_import_database
 
 # ======================================================================
 # Sync file directories
@@ -149,9 +108,20 @@
 
 - name: sync public files
   shell: rsync -ru --delete /var/data/public/ /var/web{{ drupal_docroot }}/sites/default/files/
-  when: drupal_import_public
+  tags: drupal_import_public
 
 - name: sync private files
   shell: rsync -ru --delete /var/data/private/ {{ drupal_private_files }}
-  when: drupal_import_private
+  tags: drupal_import_private
+
+- name: fix files directories ownership
+  file:
+    path: "{{ item }}"
+    owner: root
+    group: root
+    recurse: yes
+    state: directory
+  with_items:
+  - /var/web{{ drupal_docroot }}/sites/default/files
+  - "{{ drupal_private_files }}"
 

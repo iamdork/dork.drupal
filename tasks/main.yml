@@ -1,8 +1,8 @@
 # ======================================================================
-# Set error handling. Errors may be ignored during initial install.
+# If the whole playbook is executed, there is an install and install
+# are optionally ignored.
 - set_fact:
-    __installing: True
-  tags: drupal_install
+    __install_ignore: drupal_ignore_install_errors
 
 # ======================================================================
 # Prepare directory
@@ -63,22 +63,26 @@
 # Site cleanup tasks.
 - name: update drupal
   shell: drush updb -y
-  ignore_errors: __installing is defined and drupal_ignore_install_errors
+  register: r
+  failed_when: __install_ignore is undefined and r.rc != 0
   tags: drupal_update
 
 - name: revert features
   shell: drush fra -y
-  ignore_errors: __installing is defined and drupal_ignore_install_errors
+  register: r
+  failed_when: __install_ignore is undefined and r.rc != 0
   tags: drupal_features
 
 - name: import configuration
   shell: drush cim --partial -y
-  ignore_errors: __installing is defined and drupal_ignore_install_errors
+  register: r
+  failed_when: __install_ignore is undefined and r.rc != 0
   tags: drupal_config_import
 
 - name: cache clear
   shell: drush {{ drupal_cache_command }}
-  ignore_errors: __installing is defined and drupal_ignore_install_errors
+  register: r
+  failed_when: __install_ignore is undefined and r.rc != 0
   tags: drupal_cache
 
 - name: sync build

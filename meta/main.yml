@@ -36,3 +36,12 @@ dork:
 
     drupal_config_install:
     - "config/core.extension.yml"
+
+    drupal_import_database:
+    - "data://drupal.sql"
+
+    drupal_import_public:
+    - "data://public"
+
+    drupal_import_private:
+    - "data://private"
