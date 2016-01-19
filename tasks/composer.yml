@@ -1,6 +1,3 @@
-- set_fact:
-    drupal_docroot: /web
-
 - composer:
     command: install
     working_dir: /var/source

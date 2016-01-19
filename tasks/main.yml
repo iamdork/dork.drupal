@@ -4,6 +4,11 @@
 - set_fact:
     __install_ignore: drupal_ignore_install_errors
 
+- name: set drupal_docroot to /web directory in composer template
+  set_fact:
+    drupal_docroot: /web
+  tags: drupal_composer
+
 # ======================================================================
 # Prepare directory
 - name: get stat of /var/web

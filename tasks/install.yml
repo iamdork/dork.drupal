@@ -21,13 +21,6 @@
     mode: 0755
     state: directory
 
-- set_fact:
-    __drush_install: yes
-
-- name: skip drush install if database is imported
-  set_fact:
-    __drush_install: no
-  tags: drupal_database_import
 # ======================================================================
 # Install via drush
 # ======================================================================
@@ -64,34 +57,17 @@
   args:
     chdir: /var/web{{ drupal_docroot }}/sites/default
   register: r
-  when: __drush_install
   failed_when: __install_ignore is undefined and r.rc != 0
 
 # ======================================================================
 # Install via dump
 # ======================================================================
-- name: create settings php
-  shell: cp /var/web{{ drupal_docroot }}/sites/default/default.settings.php /var/web{{ drupal_docroot }}/sites/default/settings.php
-  tags: drupal_import_database
-
-- name: copy database.settings.php
-  copy:
-    src: database.settings.php
-    dest: /root/database.settings.php
-  tags: drupal_import_database
-
-- name: include the database.settings.php
-  lineinfile:
-    dest: /var/web{{ drupal_docroot }}/sites/default/settings.php
-    line: require '/root/database.settings.php';
-  tags: drupal_import_database
-
 - name: create database
-  shell: mysqladmin create drupal
+  shell: drush sql-create -y
   tags: drupal_import_database
 
 - name: import database file
-  shell: mysql drupal < {{ drupal_database_dump }}
+  shell: drush sqlc < {{ drupal_database_dump }}
   tags: drupal_import_database
 
 # ======================================================================
