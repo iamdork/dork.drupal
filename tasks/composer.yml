@@ -2,6 +2,7 @@
   shell: >
     rsync -ru --delete
     --exclude=.git
+    --exclude=vendor
     --exclude=web/sites/default
     --exclude=web/modules/contrib
     --exclude=web/themes/contrib
