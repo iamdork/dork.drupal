@@ -1,8 +1,18 @@
+- name: sync code
+  shell: >
+    rsync -ru --delete
+    --exclude=.git
+    --exclude=web/sites/default
+    --exclude=web/modules/contrib
+    --exclude=web/themes/contrib
+    --exclude=web/profiles/contrib
+    --exclude=web/core
+    /var/source/ /var/web/
+  tags: always
+
 - composer:
     command: install
     working_dir: /var/source
     no_dev: no
   tags:
   - drupal_composer_install
-
-- include: root.yml
