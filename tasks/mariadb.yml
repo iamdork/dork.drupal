@@ -9,3 +9,4 @@
     name: mariadb
     state: restarted
   when: mariadb_conf.changed
+  ignore_errors: yes

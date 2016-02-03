@@ -1,5 +1,6 @@
 server {
   server_name _;
+  listen {{ drupal_http_port }};
   root /var/web{{ drupal_docroot }}/;
   error_log /var/log/nginx/container.log;
 

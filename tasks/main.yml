@@ -36,8 +36,17 @@
 # Configure nginx
 - name: override nginx vhost
   template:
-    src: dork.conf.j2
-    dest: /etc/nginx/conf.d/dork.conf
+    src: drupal.conf.j2
+    dest: /etc/nginx/conf.d/drupal.conf
+  when: drupal_http_port
+  notify: dork.nginx reload
+
+- name: remove nginx vhost
+  file:
+    path: /etc/nginx/conf.d/drupal.conf
+    state: absent
+  when: not drupal_http_port
+  notify: dork.nginx reload
 
 # ======================================================================
 # Install CLI tools
