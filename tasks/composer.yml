@@ -3,7 +3,8 @@
     rsync -ru --delete
     --exclude=.git
     --exclude=vendor
-    --exclude=web/sites/default
+    --exclude=web/sites/default/settings.php
+    --exclude=web/sites/default/files
     --exclude=web/modules/contrib
     --exclude=web/themes/contrib
     --exclude=web/profiles/contrib
@@ -11,9 +12,10 @@
     /var/source/ /var/web/
   tags: always
 
-- composer:
+- name: composer install
+  composer:
     command: install
-    working_dir: /var/source
+    working_dir: /var/web
     no_dev: no
   tags:
   - drupal_composer_install

@@ -1,7 +1,5 @@
 dependencies:
-- { role: dork.php,
-    # Disable the default php handler.
-    php_http_port: False }
+- dork.php
 - dork.mariadb
 - dork.shell
 - dork.cron

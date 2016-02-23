@@ -70,6 +70,17 @@
   shell: drush sqlc < {{ drupal_database_dump }}
   tags: drupal_import_database
 
+- name: clear unecessary data
+  shell: mysql -u root -e "TRUNCATE TABLE {{ item }}" drupal
+  tags: drupal_import_database
+  ignore_errors: yes
+  with_items: drupal_truncate_tables
+
+- name: drop unused tables
+  shell: mysql -u root -e "DROP TABLE IF EXISTS {{ item }}" drupal
+  tags: drupal_import_database
+  with_items: drupal_drop_tables
+
 # ======================================================================
 # Sync file directories
 # ======================================================================
