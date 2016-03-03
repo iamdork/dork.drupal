@@ -3,3 +3,5 @@ dependencies:
 - dork.mariadb
 - dork.shell
 - dork.cron
+- dork.phpmyadmin
+- dork.sendmail
