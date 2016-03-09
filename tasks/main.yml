@@ -77,12 +77,14 @@
   shell: drush fra -y
   register: r
   failed_when: __install_ignore is undefined and r.rc != 0
+  ignore_errors: yes
   tags: drupal_features
 
 - name: import configuration
   shell: drush cim --partial -y
   register: r
   failed_when: __install_ignore is undefined and r.rc != 0
+  ignore_errors: yes
   tags: drupal_config_import
 
 - name: cache clear
